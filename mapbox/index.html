@@ -2,7 +2,7 @@
 <html>
   <head>
     <meta charset='utf-8' />
-    <title>Points on a map</title>
+    <title>Zika Interface</title>
     <meta name='viewport' content='initial-scale=1,maximum-scale=1,user-scalable=no' />
     <script src='https://api.tiles.mapbox.com/mapbox-gl-js/v1.12.0/mapbox-gl.js'></script>
     <link href='https://api.tiles.mapbox.com/mapbox-gl-js/v1.12.0/mapbox-gl.css' rel='stylesheet' />
@@ -27,7 +27,18 @@
     </style>
   </head>
   <body>
-    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+    <!-- Geocoder -->
+    <script src="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v4.5.1/mapbox-gl-geocoder.min.js"></script>
+    <link
+    rel="stylesheet"
+    href="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v4.5.1/mapbox-gl-geocoder.css"
+    type="text/css"
+    />
+
+    <script src="https://cdn.jsdelivr.net/npm/es6-promise@4/dist/es6-promise.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/es6-promise@4/dist/es6-promise.auto.min.js"></script>
+
+    <nav id="navbar" class="navbar navbar-expand-lg navbar-light bg-light">
   <a class="navbar-brand" href="#">Zika</a>
   <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
     <span class="navbar-toggler-icon"></span>
@@ -36,13 +47,13 @@
   <div class="collapse navbar-collapse" id="navbarSupportedContent">
     <ul class="navbar-nav mr-auto">
       <li class="nav-item">
-        <a class="nav-link" href="#">Select the first case</a>
+        <a class="nav-link" href="#">Choose first point</a>
       </li>
       <li class="nav-item dropdown">
-        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+        <a class="nav-link dropdown-toggle" href="#" id="displayDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
           Display
         </a>
-        <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+        <div class="dropdown-menu" aria-labelledby="displayDropdown">
           <a class="dropdown-item" href="#">Zoom in </a>
           <a class="dropdown-item" href="#">Zoom out</a>
           <div class="dropdown-divider"></div>
@@ -50,18 +61,19 @@
           <a class="dropdown-item" id="dark_mode_id" href="#" onclick="toggleDisplay(false)">Dark Mode</a>
         </div>
       </li>
-      <li class="nav-item">
-        <a class="nav-link disabled" href="#">Tools</a>
+      <li class="nav-item dropdown">
+        <a class="nav-link dropdown-toggle" href="#" id="toolsDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Machine Learning Model</a>
+        <div class="dropdown-menu" aria-labelledby="toolsDropdown">
+          <a class="dropdown-item active" href="#">Random Forest Regression</a>
+          <a class="dropdown-item" href="#">Gradient Boosting Regression</a>
+          <a class="dropdown-item" href="#">Polynomial Regression</a>
+        </div>
       </li>
-    </ul>
-    <form class="form-inline my-2 my-lg-0">
-      <input class="form-control mr-sm-2" type="search" placeholder="Search" aria-label="Search">
-      <button class="btn btn-outline-success my-2 my-sm-0" type="submit">Search</button>
-    </form>
+    </ul> 
   </div>
 </nav>
     <div id='map_light'></div>
-    <div id='map_dark' style="display:none;"></div>
+    <div id='map_dark' style="visibility:hidden;"></div>
 
 
     <script>
@@ -79,6 +91,24 @@
       center: [-76.520,13.430],
       zoom: 3.2,
     });
+
+    map_l.addControl(
+      new MapboxGeocoder({
+        accessToken: mapboxgl.accessToken,
+        language: 'en-US',
+        mapboxgl: mapboxgl
+      })
+    );
+    map_l.addControl(new mapboxgl.NavigationControl());
+
+    map_d.addControl(
+      new MapboxGeocoder({
+        accessToken: mapboxgl.accessToken,
+        language: 'en-US',
+        mapboxgl: mapboxgl
+      })
+    );
+    map_d.addControl(new mapboxgl.NavigationControl());
     // code from the next step will go here
     </script>
 
@@ -93,8 +123,14 @@
           document.getElementById('dark_mode_id').classList.remove("active");
           document.getElementById('light_mode_id').classList.add("active");
 
-          document.getElementById('map_dark').style.display = 'none';
-          document.getElementById('map_light').style.display = 'block';
+          document.getElementById('navbar').classList.remove("navbar-dark");
+          document.getElementById('navbar').classList.add("navbar-light");
+
+          document.getElementById('navbar').classList.remove("bg-dark");
+          document.getElementById('navbar').classList.add("bg-light");
+
+          document.getElementById('map_dark').style.visibility = 'hidden';
+          document.getElementById('map_light').style.visibility = 'visible';
 
         }
         
@@ -106,8 +142,15 @@
           document.getElementById('light_mode_id').classList.remove("active");
           document.getElementById('dark_mode_id').classList.add("active");
 
-          document.getElementById('map_light').style.display = 'none'; 
-          document.getElementById('map_dark').style.display = 'block';
+          document.getElementById('navbar').classList.remove("navbar-light");
+          document.getElementById('navbar').classList.add("navbar-dark");
+
+          document.getElementById('navbar').classList.remove("bg-light");
+          document.getElementById('navbar').classList.add("bg-dark");
+
+          document.getElementById('map_light').style.visibility = 'hidden';
+          document.getElementById('map_dark').style.visibility = 'visible';
+
    
         }
       }
