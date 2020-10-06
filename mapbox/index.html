@@ -7,6 +7,7 @@
     <script src='https://api.tiles.mapbox.com/mapbox-gl-js/v1.12.0/mapbox-gl.js'></script>
     <link href='https://api.tiles.mapbox.com/mapbox-gl-js/v1.12.0/mapbox-gl.css' rel='stylesheet' />
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" integrity="sha384-JcKb8q3iqJ61gNV9KGb8thSsNjpSL0n8PARn9HuZOnIxN0hoP+VmmDGMN5t9UJ0Z" crossorigin="anonymous">
+     <link href="https://fonts.googleapis.com/css2?family=Raleway&display=swap" rel="stylesheet"> 
     <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js" integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js" integrity="sha384-9/reFTGAW83EW2RDu2S0VKaIzap3H66lZH81PoYlFhbGU+6BZp6G7niu735Sk7lN" crossorigin="anonymous"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js" integrity="sha384-B4gt1jrGC7Jh4AgTPSdUtOBvfO8shuf57BaghqFfPlYxofvL8/KUEfYiJOMMV+rV" crossorigin="anonymous"></script>
@@ -16,13 +17,77 @@
         padding: 0;
       }
 
-      #map_light,
-      #map_dark {
+      #map {
         position: absolute;
         top: 56px;
         bottom: 0;
         width: 100%;
       }
+
+      .coordinates {
+        background: rgba(0, 0, 0, 0.5);
+        color: #fff;
+        position: absolute;
+        bottom: 40px;
+        right: 10px;
+        padding: 5px 10px;
+        margin: 0;
+        font-size: 11px;
+        line-height: 18px;
+        border-radius: 3px;
+        display: none;
+      }
+
+      /* ----- TIMELINE CSS ----- */
+
+      .map-overlay {
+      font: 12px 'Helvetica Neue', Arial, Helvetica, sans-serif;
+      font-family: 'Raleway', sans-serif;
+      position: absolute;
+      width: 20%;
+      bottom: 20px;
+      left: 0px;
+      padding: 10px;
+      }
+       
+      .map-overlay .map-overlay-inner {
+      /*background-color: #fff;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+      border-radius: 3px;*/
+      padding: 10px;
+      margin-bottom: 10px;
+      }
+       
+      .map-overlay h2 {
+      line-height: 24px;
+      display: block;
+      margin: 0 0 10px;
+      }
+       
+      .map-overlay .legend .bar {
+      height: 10px;
+      width: 100%;
+      background: linear-gradient(90deg, rgba(165,236,126,1) 0%, rgba(203,233,83,1) 50%, rgba(249,67,67,1) 100%); 
+      }
+       
+        input[type=range] {
+        background-color: transparent;
+        display: inline-block;
+        width: 100%;
+        position: relative;
+        margin: 0;
+        cursor: ew-resize;
+        -webkit-appearance: none;     /*nécessaire pour Chrome */
+          padding: 0;                   /* nécessaire pour IE */
+          font: inherit;                /* même rendu suivant font document */
+          outline: none;
+          color: #069;                  /* sert pour couleur de référence, via currentColor, pour le curseur */
+          opacity: .8;
+          background: white;             /* sert pour couleur de fond de la zone de déplacement */
+          box-sizing: border-box;       /* même modèle de boîte pour tous */
+          transition: opacity .2s;
+          cursor: pointer;
+        }
 
     </style>
   </head>
@@ -47,7 +112,7 @@
   <div class="collapse navbar-collapse" id="navbarSupportedContent">
     <ul class="navbar-nav mr-auto">
       <li class="nav-item">
-        <a class="nav-link" href="#">Choose first point</a>
+        <a class="nav-link" href="#">Choose first case</a>
       </li>
       <li class="nav-item dropdown">
         <a class="nav-link dropdown-toggle" href="#" id="displayDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
@@ -72,53 +137,67 @@
     </ul> 
   </div>
 </nav>
-    <div id='map_light'></div>
-    <div id='map_dark' style="visibility:hidden;"></div>
+    <div id='map'></div>
+    <pre id="coordinates" class="coordinates"></pre>
+    <div class="map-overlay">
+      <div class="map-overlay-inner" id="legende" style="background-color: transparent;box-shadow: none;border:none;">
+        <div id="legend" class="legend">
+          <div class="bar"></div>
+          <div>Number of cases</div>
+        </div>
+      </div>
+      <div class="map-overlay-inner">
+        <h2 id="titre_timeline">Timeline</h2>
+        <label id="month"></label>
+        <input id="slider" type="range" min="0" max="11" step="1" value="0" />
+      </div>
+      
+    </div>
 
 
     <script>
     mapboxgl.accessToken = 'pk.eyJ1IjoibWF4Ym91ZG91IiwiYSI6ImNrY2tiZXlxZzFoZHQzNHFxcThqYmFoZXQifQ.Ch2XB_JxhbP5T16l50Z2SQ'; // replace this with your access token
-    var map_l = new mapboxgl.Map({
-      container: 'map_light',
+    var map = new mapboxgl.Map({
+      container: 'map',
       style: 'mapbox://styles/maxboudou/ckf7ta42m0qvi19npc9k09ao0', // replace this with your style URL
       center: [-76.520,13.430],
       zoom: 3.2,
     });
 
-    var map_d = new mapboxgl.Map({
-      container: 'map_dark',
-      style: 'mapbox://styles/maxboudou/ckfsg5vl30vbo19tiu9fgn3nv', // replace this with your style URL
-      center: [-76.520,13.430],
-      zoom: 3.2,
-    });
+    var marker = new mapboxgl.Marker({
+      draggable: true
+    })
+      .setLngLat([-76.520,13.430])
+      .addTo(map);
 
-    map_l.addControl(
+       
+    function onDragEnd() {
+      var lngLat = marker.getLngLat();
+      coordinates.style.display = 'block';
+      coordinates.innerHTML =
+        'Longitude: ' + lngLat.lng + '<br />Latitude: ' + lngLat.lat;
+    }
+ 
+    marker.on('dragend', onDragEnd);
+
+    map.addControl(
       new MapboxGeocoder({
         accessToken: mapboxgl.accessToken,
         language: 'en-US',
         mapboxgl: mapboxgl
       })
     );
-    map_l.addControl(new mapboxgl.NavigationControl());
+    map.addControl(new mapboxgl.NavigationControl());
 
-    map_d.addControl(
-      new MapboxGeocoder({
-        accessToken: mapboxgl.accessToken,
-        language: 'en-US',
-        mapboxgl: mapboxgl
-      })
-    );
-    map_d.addControl(new mapboxgl.NavigationControl());
+  
     // code from the next step will go here
     </script>
 
     <script type="text/javascript">
 
-
       
       function toggleDisplay(light) {
         if (light) {
-          console.log("Light checked!"); 
 
           document.getElementById('dark_mode_id').classList.remove("active");
           document.getElementById('light_mode_id').classList.add("active");
@@ -129,15 +208,17 @@
           document.getElementById('navbar').classList.remove("bg-dark");
           document.getElementById('navbar').classList.add("bg-light");
 
-          document.getElementById('map_dark').style.visibility = 'hidden';
-          document.getElementById('map_light').style.visibility = 'visible';
+          document.getElementById('legende').style.color = "black";
+          document.getElementById('titre_timeline').style.color = "black";
 
+
+
+          map.setStyle('mapbox://styles/maxboudou/ckf7ta42m0qvi19npc9k09ao0');
         }
         
         //Light mode radio button is checked
 
         else {
-          console.log("Black checked!"); 
 
           document.getElementById('light_mode_id').classList.remove("active");
           document.getElementById('dark_mode_id').classList.add("active");
@@ -148,8 +229,12 @@
           document.getElementById('navbar').classList.remove("bg-light");
           document.getElementById('navbar').classList.add("bg-dark");
 
-          document.getElementById('map_light').style.visibility = 'hidden';
-          document.getElementById('map_dark').style.visibility = 'visible';
+          document.getElementById('legende').style.color = "white";
+          document.getElementById('titre_timeline').style.color = "white";
+
+
+          map.setStyle('mapbox://styles/maxboudou/ckfsg5vl30vbo19tiu9fgn3nv');
+
 
    
         }
